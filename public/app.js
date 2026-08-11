@@ -175,6 +175,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  let verifyRetryCount = 0;
+  const maxVerifyRetries = 25;
+
   async function verifyExamAccess() {
     let token = null;
     let code = null;
@@ -258,8 +261,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
       renderExamUI();
     } catch (err) {
-      tokenIndicatorDot.className = 'status-indicator danger';
-      tokenStatusText.textContent = 'Connection error checking assessment authorization.';
+      console.error(err);
+      if (verifyRetryCount < maxVerifyRetries) {
+        verifyRetryCount++;
+        tokenIndicatorDot.className = 'status-indicator warning';
+        tokenStatusText.textContent = `Connecting to backend... Waking up server (Attempt ${verifyRetryCount}/${maxVerifyRetries}), please wait...`;
+        setTimeout(verifyExamAccess, 3000);
+      } else {
+        tokenIndicatorDot.className = 'status-indicator danger';
+        tokenStatusText.textContent = 'Connection error: Backend server is unreachable. Please try again later.';
+      }
     }
   }
 
