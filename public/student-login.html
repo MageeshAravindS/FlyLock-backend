@@ -221,7 +221,7 @@
         });
         const data = await res.json();
         if (res.ok && data.user) {
-          window.location.href = `/login-success?email=${encodeURIComponent(data.user.email)}`;
+          window.location.href = API_BASE + `/login-success?email=${encodeURIComponent(data.user.email)}`;
         } else {
           showError(data.message || data.error || 'Google authentication failed. Only @bitsathy.ac.in accounts permitted.');
         }
@@ -271,10 +271,11 @@
     });
 
     function redirectToGoogleOAuthPage() {
+      const redirectUri = window.location.href.split('#')[0].split('?')[0];
       const googleOAuthUrl = 'https://accounts.google.com/o/oauth2/v2/auth' +
         '?response_type=id_token' +
         '&client_id=' + encodeURIComponent(GOOGLE_CLIENT_ID) +
-        '&redirect_uri=' + encodeURIComponent(window.location.origin + '/student-login.html') +
+        '&redirect_uri=' + encodeURIComponent(redirectUri) +
         '&scope=openid%20email' +
         '&hd=bitsathy.ac.in' +
         '&nonce=' + Math.random().toString(36).substring(2);
