@@ -1,0 +1,14 @@
+# SQLite Database Files
+*.db
+*.db-journal
+
+# Environment / Secret Files
+.env
+atlas-credentials.env
+
+# Python caching
+__pycache__/
+*.pyc
+
+# Local log files
+*.log

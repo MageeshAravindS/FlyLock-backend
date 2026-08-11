@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FlyLock Creator & Admin Portal</title>
+  <meta name="description" content="Instructor and Admin Portal for creating assessments, managing allowlists, and monitoring student attempts.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <script>
+    window.handleGoogleCredentialResponse = function(response) {
+      if (window.onGoogleLibraryCallback) {
+        window.onGoogleLibraryCallback(response);
+      }
+    };
+  </script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <!-- Top Navigation Header -->
+  <header class="app-header">
+    <div class="header-brand">
+      <div class="logo-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          <rect x="9" y="11" width="6" height="4" rx="1"/>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <span class="brand-name">FlyLock Studio</span>
+        <span class="brand-sub">Creator & Admin Portal</span>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <nav class="nav-tabs">
+      <button class="nav-tab active" data-surface="create" id="tab-create">
+        Create Assessment
+      </button>
+      <button class="nav-tab" data-surface="admin" id="tab-admin">
+        Admin Control
+      </button>
+      <button class="nav-tab glow-tab" data-surface="simulator" id="tab-simulator">
+        Browser Shell Simulator
+      </button>
+      <a href="/index.html" class="nav-tab" style="text-decoration: none;" target="_blank">
+        Student Kiosk View
+      </a>
+    </nav>
+
+    <!-- User Auth Status -->
+    <div class="header-user" id="user-status-area">
+      <span class="user-badge guest" id="user-badge">Not Logged In</span>
+      <button class="btn btn-sm btn-outline" id="btn-login-modal">Creator / Admin Login</button>
+      <button class="btn btn-sm btn-ghost hidden" id="btn-logout">Logout</button>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="app-main">
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- SURFACE 1: CREATE ASSESSMENT -->
+    <section id="surface-create" class="surface-container active">
+      <div class="surface-header">
+        <div>
+          <h2>Assessment Creator Studio</h2>
+          <p class="section-desc">Design custom multiple-choice assessments or bulk-import via CSV with strict schema validation.</p>
+        </div>
+        <div class="creator-auth-gate hidden" id="create-unauth-msg" style="margin-top: 10px;">
+          <div class="card" style="border-left: 4px solid var(--warning); background: #fffbe6;">
+            <strong style="color: var(--warning);">Login Required:</strong> Please log in with your <strong>@bitsathy.ac.in</strong> email above to create or publish assessments.
+          </div>
+        </div>
+      </div>
+
+      <!-- Creation Mode Selector Tabs -->
+      <div class="creation-mode-tabs">
+        <button class="mode-tab active" id="mode-tab-manual">Manual MCQ Builder</button>
+        <button class="mode-tab" id="mode-tab-csv">Bulk CSV Import</button>
+        <button class="mode-tab" id="mode-tab-published">Published Assessments</button>
+        <button class="mode-tab" id="mode-tab-responses">Student Responses</button>
+      </div>
+
+      <!-- Mode 1: Manual Builder -->
+      <div id="builder-manual-panel" class="builder-panel">
+        <form id="form-create-assessment" class="form-grid">
+          <div class="card form-section">
+            <h3 class="form-title">1. Assessment Metadata</h3>
+            <div class="form-row">
+              <div class="form-group col-6">
+                <label for="input-exam-code">5-Digit Access PIN Code</label>
+                <div style="display: flex; gap: 6px;">
+                  <input type="text" id="input-exam-code" class="form-input code-font" placeholder="e.g. 84920" maxlength="5" pattern="\d{5}" required style="letter-spacing: 2px; font-weight: bold;">
+                  <button type="button" class="btn btn-sm btn-outline" id="btn-gen-pin">GENERATE PIN</button>
+                </div>
+                <small class="form-help">5-digit numerical code used by students inside FlyLock Browser.</small>
+              </div>
+              <div class="form-group col-6">
+                <label for="input-duration">Duration (Minutes)</label>
+                <input type="number" id="input-duration" class="form-input" value="45" min="5" max="300" required>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="input-exam-title">Assessment Title</label>
+              <input type="text" id="input-exam-title" class="form-input" placeholder="e.g. Advanced Operating Systems Security Exam" required>
+            </div>
+            <div class="form-group">
+              <label for="input-exam-desc">Description</label>
+              <textarea id="input-exam-desc" class="form-input" rows="2" placeholder="Brief instructions for students..."></textarea>
+            </div>
+          </div>
+
+          <div class="card form-section">
+            <div class="section-title-bar" style="display: flex; justify-content: space-between; align-items: center;">
+              <h3 class="form-title">2. Multiple Choice Questions</h3>
+              <button type="button" class="btn btn-sm btn-outline" id="btn-add-question">+ Add Question</button>
+            </div>
+            
+            <div id="questions-list-container" class="questions-builder-list">
+              <!-- Question Items injected dynamically -->
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary btn-lg" id="btn-publish-assessment">
+              Publish Assessment
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Mode 2: Bulk CSV Import -->
+      <div id="builder-csv-panel" class="builder-panel hidden">
+        <div class="card csv-import-card">
+          <h3>Bulk Import via CSV</h3>
+          <p class="csv-spec-info">
+            CSV Schema format: <code>Question | Option 1 | Option 2 | Option 3 | Option 4 | Answer | Reason</code><br>
+            Answer matching supports literal option text or letter/number indices (A, B, C / 1, 2, 3). Formula injection cells are automatically sanitized.
+          </p>
+
+          <div class="form-group" style="margin-top: 1rem;">
+            <label>Import Mode</label>
+            <div style="display: flex; gap: 1.5rem; margin-top: 0.5rem;">
+              <label style="display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                <input type="radio" name="csv-import-mode" value="new" checked id="csv-mode-new">
+                <strong>Publish New Assessment from CSV</strong>
+              </label>
+              <label style="display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                <input type="radio" name="csv-import-mode" value="append" id="csv-mode-append">
+                <strong>Append to Existing Assessment</strong>
+              </label>
+            </div>
+          </div>
+
+          <!-- Section A: New Assessment Metadata (for CSV Mode 'new') -->
+          <div id="csv-new-metadata-section" style="margin-top: 1rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+            <div class="form-row">
+              <div class="form-group col-6">
+                <label for="input-csv-exam-code">5-Digit Access PIN Code</label>
+                <div style="display: flex; gap: 6px;">
+                  <input type="text" id="input-csv-exam-code" class="form-input code-font" placeholder="e.g. 91823" maxlength="5" pattern="\d{5}" style="letter-spacing: 2px; font-weight: bold;">
+                  <button type="button" class="btn btn-sm btn-outline" id="btn-csv-gen-pin">GENERATE PIN</button>
+                </div>
+              </div>
+              <div class="form-group col-6">
+                <label for="input-csv-duration">Duration (Minutes)</label>
+                <input type="number" id="input-csv-duration" class="form-input" value="45" min="5" max="300">
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="input-csv-exam-title">Assessment Title</label>
+              <input type="text" id="input-csv-exam-title" class="form-input" placeholder="e.g. Database Systems Midterm Exam">
+            </div>
+            <div class="form-group">
+              <label for="input-csv-exam-desc">Description</label>
+              <textarea id="input-csv-exam-desc" class="form-input" rows="2" placeholder="Brief instructions for students..."></textarea>
+            </div>
+          </div>
+
+          <!-- Section B: Existing Assessment Selector (for CSV Mode 'append') -->
+          <div id="csv-append-metadata-section" class="form-group hidden" style="margin-top: 1rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+            <label for="select-target-assessment">Select Target Assessment to Append</label>
+            <select id="select-target-assessment" class="form-input">
+              <!-- Assessment options injected dynamically -->
+            </select>
+          </div>
+
+          <div class="csv-upload-dropzone" id="csv-dropzone" style="margin-top: 1rem;">
+            <p>Drag & Drop your CSV file here, or click to browse</p>
+            <input type="file" id="input-csv-file" accept=".csv" class="hidden-file-input">
+            <button type="button" class="btn btn-sm btn-outline" id="btn-browse-csv">Browse File</button>
+          </div>
+
+          <div class="csv-preview-container hidden" id="csv-preview-box">
+            <h4>CSV Content Preview & Validation Pass</h4>
+            <div class="table-responsive">
+              <table class="data-table" id="csv-preview-table">
+                <thead></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+
+            <div id="csv-validation-report" class="validation-report-box hidden"></div>
+
+            <div class="csv-actions" style="margin-top: 1rem;">
+              <button type="button" class="btn btn-success" id="btn-confirm-csv-import">
+                Confirm & Import Valid Questions
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mode 3: Published Assessments Management -->
+      <div id="builder-published-panel" class="builder-panel hidden">
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <div>
+              <h3>Published Assessments Management</h3>
+              <p class="sub-text">View active access PIN codes, edit titles/durations, toggle active status, or revoke/delete assessments.</p>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline" id="btn-refresh-published">Refresh List</button>
+          </div>
+
+          <div class="table-responsive">
+            <table class="data-table" id="table-published-assessments">
+              <thead>
+                <tr>
+                  <th>PIN Code</th>
+                  <th>Title & Description</th>
+                  <th>Duration</th>
+                  <th>Questions</th>
+                  <th>Attempts</th>
+                  <th>Status</th>
+                  <th>Created By</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Injected dynamically -->
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mode 4: Student Responses & Assessment Live Control Panel -->
+      <div id="builder-responses-panel" class="builder-panel hidden">
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
+            <div>
+              <h3>Student Submissions, Live Session Control & Re-attempts</h3>
+              <p class="sub-text">Monitor live logged-in students per assessment, inspect verified @bitsathy.ac.in responses, and grant re-attempts for crashes/disruptions.</p>
+            </div>
+            <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+              <select id="select-filter-assessment" class="form-input" style="max-width: 260px;">
+                <option value="">All Assessments</option>
+              </select>
+              <input type="text" id="input-filter-student-email" class="form-input" placeholder="Filter by student email..." style="max-width: 220px;">
+              <button type="button" class="btn btn-sm btn-outline" id="btn-refresh-responses">Refresh Responses</button>
+            </div>
+          </div>
+
+          <!-- Live Session Control Bar -->
+          <div id="live-session-stats-bar" style="display: flex; gap: 1.5rem; background: var(--bg-dark); padding: 0.75rem 1rem; border: 1px solid var(--border-color); margin-bottom: 1rem; border-radius: 6px; font-size: 0.9rem; flex-wrap: wrap;">
+            <div>Total Attempts: <strong id="stat-total-attempts" style="color: var(--primary);">0</strong></div>
+            <div><span class="status-indicator warning"></span> Live In-Progress: <strong id="stat-inprogress-attempts" style="color: var(--warning);">0</strong></div>
+            <div><span class="status-indicator success"></span> Submitted: <strong id="stat-submitted-attempts" style="color: var(--success);">0</strong></div>
+            <div><span class="status-indicator danger"></span> Terminated / Blocked: <strong id="stat-terminated-attempts" style="color: var(--danger);">0</strong></div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="data-table" id="table-student-responses">
+              <thead>
+                <tr>
+                  <th>Attempt ID</th>
+                  <th>Student Email</th>
+                  <th>Assessment PIN & Title</th>
+                  <th>Score / Result</th>
+                  <th>Live Status</th>
+                  <th>Started At</th>
+                  <th>Last Activity / Submitted</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Injected dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SURFACE 2: ADMIN PORTAL -->
+    <section id="surface-admin" class="surface-container">
+      <div class="surface-header">
+        <div>
+          <h2>Administrator Control Center</h2>
+          <p class="section-desc">Manage Creator email allowlists, monitor student exam session attempts, reset stuck attempts, and review system security audit logs.</p>
+        </div>
+      </div>
+
+      <div class="admin-grid">
+        <!-- Panel 1: Creator Allowlist -->
+        <div class="card admin-card">
+          <h3>Creator Email Allowlist</h3>
+          <p class="sub-text">Only emails on this allowlist or ending in @bitsathy.ac.in can authenticate and publish assessments.</p>
+          
+          <form id="form-add-allowlist" class="form-row flex-align-end margin-bottom-md">
+            <div class="form-group flex-grow">
+              <label for="input-allowlist-email">Add Instructor Email</label>
+              <input type="email" id="input-allowlist-email" class="form-input" placeholder="professor@bitsathy.ac.in" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Add to Allowlist</button>
+          </form>
+
+          <div class="table-responsive">
+            <table class="data-table" id="table-allowlist">
+              <thead>
+                <tr>
+                  <th>Email</th>
+                  <th>Added By</th>
+                  <th>Status</th>
+                  <th>Added Date</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Panel 2: Exam Session & Attempt Overrides -->
+        <div class="card admin-card">
+          <h3>Student Attempt Monitor & Session Resets</h3>
+          <p class="sub-text">Live oversight of student attempts. Admins can reset crashed or locked attempts back to 'not_started'.</p>
+          
+          <div class="table-responsive">
+            <table class="data-table" id="table-admin-attempts">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Student Client ID</th>
+                  <th>Exam Code</th>
+                  <th>Status</th>
+                  <th>Started At</th>
+                  <th>Submitted At</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Panel 3: System Audit Logs -->
+        <div class="card admin-card col-span-2">
+          <h3>Security & Session Audit Log Stream</h3>
+          <p class="sub-text">Immutable record of authentication, single-use token issuance, token redemption, and session termination events.</p>
+          
+          <div class="table-responsive log-table-wrapper">
+            <table class="data-table log-table" id="table-audit-logs">
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>Event Type</th>
+                  <th>Actor</th>
+                  <th>Exam Code</th>
+                  <th>Details</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SURFACE 3: FLYLOCK BROWSER SIMULATOR -->
+    <section id="surface-simulator" class="surface-container">
+      <div class="surface-header">
+        <div>
+          <h2>FlyLock Browser Shell Simulator</h2>
+          <p class="section-desc">Interactive kiosk harness simulating FlyLock Browser native shell requests (Layer 1 single-use token exchange & single-session nonce burn).</p>
+        </div>
+      </div>
+
+      <div class="simulator-window card">
+        <div class="sim-window-header">
+          <div class="sim-title">FlyLock Browser v1.0 Shell (Native C# / ChromiumWebBrowser Wrapper)</div>
+        </div>
+
+        <div class="sim-window-body">
+          <div class="sim-step-card">
+            <h4>Step 1: Enter Assessment Code in Native Shell</h4>
+            <div class="form-row">
+              <div class="form-group col-6">
+                <label>Install-Bound Client GUID</label>
+                <input type="text" id="sim-client-id" class="form-input code-font" readonly>
+              </div>
+              <div class="form-group col-6">
+                <label>Assessment Code</label>
+                <input type="text" id="sim-exam-code" class="form-input code-font" value="CS101-SECURE">
+              </div>
+            </div>
+            <button class="btn btn-primary" id="sim-btn-fetch-token">
+              Request One-Time Launch Token (POST /api/v1/sessions/launch)
+            </button>
+          </div>
+
+          <div class="sim-step-card" id="sim-token-result-box">
+            <h4>Step 2: Received Token & Nonce Response</h4>
+            <pre class="code-block" id="sim-json-output">// Click 'Request One-Time Launch Token' above to execute token exchange...</pre>
+          </div>
+
+          <div class="sim-step-card">
+            <h4>Step 3: Launch ChromiumWebBrowser Navigation</h4>
+            <p>Click below to navigate to the target URL. The server will consume the token nonce once, issue a session cookie, and burn the token.</p>
+            <button class="btn btn-success btn-lg" id="sim-btn-launch-browser" disabled>
+              Open Assessment with Single-Use Token
+            </button>
+            <button class="btn btn-danger" id="sim-btn-test-replay" disabled>
+              Test Replay Attack (Attempt Second Redemption)
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Login Modal -->
+  <div class="modal-backdrop hidden" id="modal-login">
+    <div class="modal-card card">
+      <div class="modal-header">
+        <h3>Creator / Admin Authentication</h3>
+        <button class="btn-close" id="btn-close-modal">CLOSE</button>
+      </div>
+
+      <!-- Google SSO Button -->
+      <div class="google-sso-wrapper margin-bottom-md" style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+        <div id="g_id_onload"
+             data-client_id="556888061468-r7ukjulnh2esht6vrtjqtgs6gim0slhh.apps.googleusercontent.com"
+             data-hosted_domain="bitsathy.ac.in"
+             data-callback="handleGoogleCredentialResponse">
+        </div>
+        <div class="g_id_signin" data-type="standard" data-shape="rectangular" data-theme="filled_blue" data-text="signin_with" data-size="large" data-logo_alignment="left"></div>
+      </div>
+
+      <div style="display: flex; align-items: center; margin: 1rem 0; color: var(--text-dim); font-size: 0.8rem;">
+        <div style="flex:1; height:1px; background:var(--border-color);"></div>
+        <span style="padding: 0 10px;">OR EMAIL LOGIN</span>
+        <div style="flex:1; height:1px; background:var(--border-color);"></div>
+      </div>
+
+      <form id="form-login">
+        <div class="form-group">
+          <label for="input-login-email">BIT Sathy Email Address</label>
+          <input type="email" id="input-login-email" class="form-input" placeholder="e.g. student@bitsathy.ac.in or prof@bitsathy.ac.in" required>
+          <small class="form-help">Only institutional emails ending with <strong>@bitsathy.ac.in</strong> are accepted.</small>
+        </div>
+        <div class="form-actions align-right" style="margin-top: 1rem;">
+          <button type="submit" class="btn btn-primary">Log In</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Student Response Detail Modal -->
+  <div class="modal-backdrop hidden" id="modal-response-detail">
+    <div class="modal-card card" style="max-width: 800px; width: 90%; max-height: 90vh; overflow-y: auto;">
+      <div class="modal-header">
+        <h3>Student Response Breakdown</h3>
+        <button class="btn-close" id="btn-close-response-modal">CLOSE</button>
+      </div>
+
+      <div id="response-detail-content">
+        <!-- Injected dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <script src="/portal.js"></script>
+  
+  <!-- Floating Backend API Config for GitHub Pages -->
+  <div id="backend-config-trigger" style="position: fixed; bottom: 15px; right: 15px; background: #000; color: #fff; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; border: 2px solid #fff; border-radius: 4px; z-index: 9999; box-shadow: 0 4px 6px rgba(0,0,0,0.15);" onclick="promptBackendUrl()">⚙️</div>
+  <script>
+    function promptBackendUrl() {
+      const current = localStorage.getItem('FLYLOCK_BACKEND_URL') || 'https://bitsathy-flylock.onrender.com';
+      const newUrl = prompt('Enter FlyLock Backend API URL (Render Web Service URL):', current);
+      if (newUrl !== null) {
+        localStorage.setItem('FLYLOCK_BACKEND_URL', newUrl.trim());
+        window.location.reload();
+      }
+    }
+    // If running on github.io and no URL is set, alert once
+    if (window.location.hostname.endsWith('github.io') && !localStorage.getItem('FLYLOCK_BACKEND_URL')) {
+      localStorage.setItem('FLYLOCK_BACKEND_URL', 'https://bitsathy-flylock.onrender.com');
+    }
+  </script>
+</body>
+</html>

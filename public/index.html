@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FlyLock Student Assessment Portal</title>
+  <meta name="description" content="Secure, single-session assessment portal strictly integrated with FlyLock Browser.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <!-- Top Navigation Header -->
+  <header class="app-header">
+    <div class="header-brand">
+      <div class="logo-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          <rect x="9" y="11" width="6" height="4" rx="1"/>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <span class="brand-name">FlyLock</span>
+        <span class="brand-sub">Student Assessment Kiosk</span>
+      </div>
+    </div>
+
+    <!-- Navigation Status Badge & Student Auth -->
+    <div class="header-user" id="student-user-area">
+      <span class="user-badge guest" id="student-badge">Not Logged In</span>
+      <button class="btn btn-sm btn-outline" id="btn-student-login-modal">Student Login</button>
+      <button class="btn btn-sm btn-ghost hidden" id="btn-student-logout">Logout</button>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="app-main">
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- SURFACE: ATTEND ASSESSMENT -->
+    <section id="surface-attend" class="surface-container active">
+      <div class="surface-hero">
+        <!-- Locked State / Token Check View -->
+        <div id="attend-locked-view" class="card locked-card">
+          <div class="lock-illustration">
+            <div class="lock-shield">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+            </div>
+          </div>
+          <h1 class="locked-title" id="attend-lock-title">Assessment Locked</h1>
+          <p class="locked-desc" id="attend-lock-desc">
+            This assessment surface is strictly protected. Access requires launching directly from inside 
+            <strong class="highlight-text">FlyLock Browser</strong> using a signed single-use launch token.
+          </p>
+
+          <div class="token-debug-box" id="token-status-box">
+            <div class="box-label">Security Validation Status:</div>
+            <div class="status-indicator warning" id="token-indicator-dot"></div>
+            <span id="token-status-text">No active launch token or session cookie detected.</span>
+          </div>
+
+          <div class="action-buttons-row">
+            <button class="btn btn-outline" id="btn-retry-token-verify">
+              Re-verify Security Token
+            </button>
+          </div>
+        </div>
+
+        <!-- Active Exam Attempt View -->
+        <div id="attend-exam-view" class="exam-container hidden">
+          <!-- Exam Header -->
+          <div class="exam-header-bar card">
+            <div class="exam-title-block">
+              <span class="exam-code-badge" id="exam-code-tag">CS101</span>
+              <h2 id="exam-title">Systems Programming Final Exam</h2>
+            </div>
+            
+            <div class="exam-status-pills">
+              <div class="status-pill heartbeat-pill">
+                <span class="pulse-dot"></span> Autosaved
+              </div>
+              <div class="status-pill timer-pill" id="exam-timer-pill">
+                TIME: <span id="timer-display">45:00</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Exam Body Layout -->
+          <div class="exam-body-grid">
+            <!-- Questions List / Navigation Sidebar -->
+            <aside class="card question-nav-sidebar">
+              <h3>Questions</h3>
+              <div class="nav-grid" id="question-nav-grid"></div>
+              
+              <div class="nav-legend">
+                <span class="legend-item"><span class="badge badge-answered"></span> Answered</span>
+                <span class="legend-item"><span class="badge badge-unanswered"></span> Unanswered</span>
+              </div>
+
+              <div class="submit-block">
+                <button class="btn btn-success btn-block btn-lg" id="btn-submit-exam">
+                  Submit Assessment
+                </button>
+              </div>
+            </aside>
+
+            <!-- Main Question Content View -->
+            <section class="card question-card" id="question-card-content">
+              <div class="question-header">
+                <span class="question-number" id="q-num-label">Question 1 of 5</span>
+                <span class="question-points">1.0 Mark</span>
+              </div>
+              
+              <div class="question-text" id="q-text-body">
+                Loading question text...
+              </div>
+
+              <div class="options-group" id="q-options-container"></div>
+
+              <div class="question-action-bar">
+                <button class="btn btn-outline" id="btn-prev-q" disabled>Previous</button>
+                <button class="btn btn-primary" id="btn-next-q">Next Question</button>
+              </div>
+            </section>
+          </div>
+        </div>
+
+        <!-- Exam Submitted View -->
+        <div id="attend-submitted-view" class="card submitted-card hidden" style="text-align: center; padding: 2.5rem 1.5rem;">
+          <div class="success-icon" style="margin: 0 auto 1rem;">OK</div>
+          <h2>Assessment Completed & Submitted</h2>
+          <p class="sub-text">Your responses have been recorded securely on the FlyLock Assessment Portal server.</p>
+
+          <div id="submitted-score-box" style="background: #f8fafc; border: 1.5px solid #cbd5e1; padding: 1.25rem; margin: 1.5rem 0; border-radius: 8px;">
+            <div style="font-size: 0.85rem; color: #64748b; font-weight: 700; margin-bottom: 0.25rem;">YOUR RECORDED ASSESSMENT RESULT</div>
+            <div id="submitted-score-display" style="font-size: 1.8rem; font-weight: 800; color: #2563eb;">Score: Recorded</div>
+            <div id="submitted-email-display" style="font-size: 0.85rem; color: #475569; margin-top: 0.5rem;"></div>
+          </div>
+
+          <p class="sub-text" style="margin-top: 1rem;">Your FlyLock session token has been burned. Re-entry into this exam attempt is disabled.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Submit Confirmation Modal -->
+  <div class="modal-backdrop hidden" id="modal-submit-confirm">
+    <div class="modal-card card">
+      <div class="modal-header">
+        <h3>Confirm Assessment Submission</h3>
+        <button class="btn-close" id="btn-close-submit-modal">CLOSE</button>
+      </div>
+      <p style="margin-bottom: 1rem; color: var(--text-main);">
+        Are you sure you want to submit your assessment? Once submitted, your answers will be finalized and re-entry into this exam attempt will be permanently disabled.
+      </p>
+      <div class="action-buttons-row" style="justify-content: flex-end; gap: 0.75rem;">
+        <button class="btn btn-outline" id="btn-cancel-submit">Continue Exam</button>
+        <button class="btn btn-success" id="btn-confirm-final-submit">Final Submit</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Student Authentication Modal -->
+  <div class="modal-backdrop hidden" id="modal-student-login">
+    <div class="modal-card card">
+      <div class="modal-header">
+        <h3>Student Institutional Login</h3>
+        <button class="btn-close" id="btn-close-student-modal">CLOSE</button>
+      </div>
+
+      <!-- Google SSO Button -->
+      <div class="google-sso-wrapper margin-bottom-md" style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+        <div id="g_id_onload"
+             data-client_id="556888061468-r7ukjulnh2esht6vrtjqtgs6gim0slhh.apps.googleusercontent.com"
+             data-hosted_domain="bitsathy.ac.in"
+             data-callback="handleStudentGoogleCredentialResponse">
+        </div>
+        <div class="g_id_signin" data-type="standard" data-shape="rectangular" data-theme="filled_blue" data-text="signin_with" data-size="large" data-logo_alignment="left"></div>
+      </div>
+
+      <div style="display: flex; align-items: center; margin: 1rem 0; color: var(--text-dim); font-size: 0.8rem;">
+        <div style="flex:1; height:1px; background:var(--border-color);"></div>
+        <span style="padding: 0 10px;">OR STUDENT EMAIL LOGIN</span>
+        <div style="flex:1; height:1px; background:var(--border-color);"></div>
+      </div>
+
+      <form id="form-student-login">
+        <div class="form-group">
+          <label for="input-student-email">BIT Sathy Student Email Address</label>
+          <input type="email" id="input-student-email" class="form-input" placeholder="e.g. student.cs22@bitsathy.ac.in" required>
+          <small class="form-help">Mandatory: Only institutional emails ending with <strong>@bitsathy.ac.in</strong> are permitted to take exams.</small>
+        </div>
+        <div class="form-actions align-right" style="margin-top: 1rem;">
+          <button type="submit" class="btn btn-primary">Log In & Attend Exam</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+  
+  <!-- Floating Backend API Config for GitHub Pages -->
+  <div id="backend-config-trigger" style="position: fixed; bottom: 15px; right: 15px; background: #000; color: #fff; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; border: 2px solid #fff; border-radius: 4px; z-index: 9999; box-shadow: 0 4px 6px rgba(0,0,0,0.15);" onclick="promptBackendUrl()">⚙️</div>
+  <script>
+    function promptBackendUrl() {
+      const current = localStorage.getItem('FLYLOCK_BACKEND_URL') || 'https://bitsathy-flylock.onrender.com';
+      const newUrl = prompt('Enter FlyLock Backend API URL (Render Web Service URL):', current);
+      if (newUrl !== null) {
+        localStorage.setItem('FLYLOCK_BACKEND_URL', newUrl.trim());
+        window.location.reload();
+      }
+    }
+    // If running on github.io and no URL is set, alert once
+    if (window.location.hostname.endsWith('github.io') && !localStorage.getItem('FLYLOCK_BACKEND_URL')) {
+      localStorage.setItem('FLYLOCK_BACKEND_URL', 'https://bitsathy-flylock.onrender.com');
+    }
+  </script>
+</body>
+</html>
