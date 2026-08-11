@@ -194,7 +194,7 @@
 
     const getApiBase = () => {
       if (window.location.hostname.endsWith('github.io')) {
-        return (localStorage.getItem('FLYLOCK_BACKEND_URL') || 'https://bitsathy-flylock.onrender.com').replace(/\/$/, '');
+        return (localStorage.getItem('FLYLOCK_BACKEND_URL') || 'https://flylock-backend.onrender.com').replace(/\/$/, '');
       }
       return '';
     };
@@ -309,7 +309,7 @@
   <div id="backend-config-trigger" style="position: fixed; bottom: 15px; right: 15px; background: #000; color: #fff; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; border: 2px solid #fff; border-radius: 4px; z-index: 9999; box-shadow: 0 4px 6px rgba(0,0,0,0.15);" onclick="promptBackendUrl()">⚙️</div>
   <script>
     function promptBackendUrl() {
-      const current = localStorage.getItem('FLYLOCK_BACKEND_URL') || 'https://bitsathy-flylock.onrender.com';
+      const current = localStorage.getItem('FLYLOCK_BACKEND_URL') || 'https://flylock-backend.onrender.com';
       const newUrl = prompt('Enter FlyLock Backend API URL (Render Web Service URL):', current);
       if (newUrl !== null) {
         localStorage.setItem('FLYLOCK_BACKEND_URL', newUrl.trim());
@@ -318,7 +318,7 @@
     }
     // If running on github.io and no URL is set, alert once
     if (window.location.hostname.endsWith('github.io') && !localStorage.getItem('FLYLOCK_BACKEND_URL')) {
-      localStorage.setItem('FLYLOCK_BACKEND_URL', 'https://bitsathy-flylock.onrender.com');
+      localStorage.setItem('FLYLOCK_BACKEND_URL', 'https://flylock-backend.onrender.com');
     }
   </script>
 </body>

@@ -7,7 +7,7 @@ const getApiBase = () => {
       localStorage.setItem('FLYLOCK_BACKEND_URL', paramUrl);
       return paramUrl.replace(/\/$/, '');
     }
-    return (localStorage.getItem('FLYLOCK_BACKEND_URL') || 'https://bitsathy-flylock.onrender.com').replace(/\/$/, '');
+    return (localStorage.getItem('FLYLOCK_BACKEND_URL') || 'https://flylock-backend.onrender.com').replace(/\/$/, '');
   }
   return '';
 };
