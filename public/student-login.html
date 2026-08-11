@@ -221,6 +221,16 @@
         });
         const data = await res.json();
         if (res.ok && data.user) {
+          const urlParams = new URLSearchParams(window.location.search);
+          const localPort = urlParams.get('local_port');
+          if (localPort) {
+            try {
+              window.location.href = `http://localhost:${localPort}/callback/?email=${encodeURIComponent(data.user.email)}`;
+              return;
+            } catch (e) {
+              console.error("Local loopback failed, using fallback redirect", e);
+            }
+          }
           window.location.href = API_BASE + `/login-success?email=${encodeURIComponent(data.user.email)}`;
         } else {
           showError(data.message || data.error || 'Google authentication failed. Only @bitsathy.ac.in accounts permitted.');
