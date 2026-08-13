@@ -110,12 +110,20 @@ def parse_cookies(cookie_header):
 
 class FlyLockHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     def end_headers(self):
-        # Allow cross-origin requests dynamically based on Origin header to support credentials
+        # Allow cross-origin requests dynamically based on Origin or Referer header to support credentials
         origin = self.headers.get("Origin")
+        if not origin:
+            referer = self.headers.get("Referer")
+            if referer:
+                parts = referer.split("/")
+                if len(parts) >= 3:
+                    origin = parts[0] + "//" + parts[2]
+        
         if origin:
             self.send_header("Access-Control-Allow-Origin", origin)
         else:
-            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Access-Control-Allow-Origin", "https://mageesharavinds.github.io")
+            
         self.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-FlyLock-Client")
         self.send_header("Access-Control-Allow-Credentials", "true")
