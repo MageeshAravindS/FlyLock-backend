@@ -1577,6 +1577,19 @@ def run_server(port=7860):
             pass
             
     os.chdir(os.path.join(os.path.dirname(__file__), "public"))
+    masked_uri = MONGO_URI
+    if "@" in MONGO_URI:
+        parts = MONGO_URI.split("@", 1)
+        prefix = parts[0]
+        suffix = parts[1]
+        if "://" in prefix:
+            scheme, auth = prefix.split("://", 1)
+            if ":" in auth:
+                user, _ = auth.split(":", 1)
+                masked_uri = f"{scheme}://{user}:****@{suffix}"
+            else:
+                masked_uri = f"{scheme}://{auth}:****@{suffix}"
+    print(f"[DB INFO] Connecting to database URI: {masked_uri}")
     init_db()
     handler = FlyLockHTTPRequestHandler
     httpd = ThreadedHTTPServer(("", port), handler)
