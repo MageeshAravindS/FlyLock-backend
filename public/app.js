@@ -1,5 +1,8 @@
 // Base API URL configuration for GitHub Pages
 const getApiBase = () => {
+  if (localStorage.getItem('FLYLOCK_BACKEND_URL') === 'https://bitsathy-flylock.onrender.com') {
+    localStorage.setItem('FLYLOCK_BACKEND_URL', 'https://flylock-backend.onrender.com');
+  }
   if (window.location.hostname.endsWith('github.io')) {
     const urlParams = new URLSearchParams(window.location.search);
     const paramUrl = urlParams.get('backend_url');
