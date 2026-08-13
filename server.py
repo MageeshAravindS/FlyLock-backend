@@ -582,7 +582,20 @@ class FlyLockHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                     return self.send_json({"valid": True, "attempt": att_dict})
 
             if is_fly_browser and code:
-                ass = database.assessments.find_one({"$or": [{"exam_code": code}, {"exam_code": "84920" if code == "CS101-SECURE" else code}], "is_active": 1})
+                # Support both string and integer lookup for exam_code and flexible values for is_active
+                code_queries = [{"exam_code": code}]
+                try:
+                    code_queries.append({"exam_code": int(code)})
+                except ValueError:
+                    pass
+                if code == "CS101-SECURE":
+                    code_queries.append({"exam_code": "84920"})
+                    code_queries.append({"exam_code": 84920})
+                
+                ass = database.assessments.find_one({
+                    "$or": code_queries,
+                    "is_active": {"$in": [1, True, "1"]}
+                })
                 if not ass:
                     return self.send_json({"error": f"Assessment with PIN code '{code}' not found or inactive."}, status=404)
                 
@@ -1420,7 +1433,12 @@ class FlyLockHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                     if not session_cookie:
                         return self.send_json({"error": "Missing exam session cookie"}, status=401)
 
-                    att = database.exam_attempts.find_one({"exam_code": exam_code, "session_cookie_id": session_cookie})
+                    code_queries = [exam_code]
+                    try:
+                        code_queries.append(int(exam_code))
+                    except ValueError:
+                        pass
+                    att = database.exam_attempts.find_one({"exam_code": {"$in": code_queries}, "session_cookie_id": session_cookie})
                     if not att:
                         return self.send_json({"error": "Exam attempt not found or invalid session"}, status=404)
 
@@ -1453,7 +1471,12 @@ class FlyLockHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                     if not session_cookie:
                         return self.send_json({"error": "Missing exam session cookie"}, status=401)
 
-                    att = database.exam_attempts.find_one({"exam_code": exam_code, "session_cookie_id": session_cookie})
+                    code_queries = [exam_code]
+                    try:
+                        code_queries.append(int(exam_code))
+                    except ValueError:
+                        pass
+                    att = database.exam_attempts.find_one({"exam_code": {"$in": code_queries}, "session_cookie_id": session_cookie})
                     if not att or att.get('status') != 'in_progress':
                         return self.send_json({"error": "Attempt is not in progress"}, status=400)
 
