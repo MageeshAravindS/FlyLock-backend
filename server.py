@@ -1409,7 +1409,7 @@ class FlyLockHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                     return self.send_json({"success": True, "message": f"Assessment '{ass['title']}' revoked and deleted."})
 
                 elif sub.endswith("/heartbeat"):
-                    match = re.search(r'/api/v1/assessments/(\d+)/heartbeat', path)
+                    match = re.search(r'/api/v1/assessments/([^/]+)/heartbeat', path)
                     if not match:
                         return self.send_json({"error": "Invalid endpoint path"}, status=400)
                     exam_code = match.group(1)
@@ -1442,7 +1442,7 @@ class FlyLockHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                     return self.send_json({"status": "ok"})
 
                 elif sub.endswith("/submit"):
-                    match = re.search(r'/api/v1/assessments/(\d+)/submit', path)
+                    match = re.search(r'/api/v1/assessments/([^/]+)/submit', path)
                     if not match:
                         return self.send_json({"error": "Invalid endpoint path"}, status=400)
                     exam_code = match.group(1)
