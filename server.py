@@ -510,6 +510,8 @@ class FlyLockHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             cookies = parse_cookies(self.headers.get('Cookie'))
             session_cookie = cookies.get('flylock_exam_session')
             student_email = cookies.get('flylock_student_email')
+            if not student_email and LATEST_STUDENT_SESSION["email"] and (time.time() - LATEST_STUDENT_SESSION["timestamp"]) < 600:
+                student_email = LATEST_STUDENT_SESSION["email"]
 
             if not student_email or not student_email.endswith('@bitsathy.ac.in'):
                 return self.send_json({
